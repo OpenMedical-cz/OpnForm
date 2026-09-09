@@ -43,8 +43,6 @@ jobs:
       - uses: docker://rhysd/actionlint:1.7.7
       - name: Verify E2E dependency source isolation
         run: bash scripts/tests/e2e-playwright-deps-test.sh
-      - name: Verify GHCR bootstrap isolation
-        run: ruby scripts/tests/venova-ghcr-bootstrap-test.rb
 
   code_lint:
     runs-on: ubuntu-latest
@@ -486,20 +484,6 @@ jobs:
       contents: read
       packages: write
     uses: ./.github/workflows/venova-staging.yml
-    secrets: inherit
-
-  venova-ghcr-bootstrap:
-    needs: [workflow_lint, code_lint, client_checks, sync_check, tests, e2e]
-    if: >
-      github.repository == 'OpenMedical-cz/OpnForm' &&
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    permissions:
-      contents: read
-      packages: write
-    uses: ./.github/workflows/venova-staging.yml
-    with:
-      publish_on_internal_pull_request: true
     secrets: inherit
 
   production-deploy:
