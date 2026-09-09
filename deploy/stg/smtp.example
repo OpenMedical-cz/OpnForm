@@ -1,2 +1,0 @@
-# Generated from the staging Environment secret SMTP_PASSWORD during deployment.
-MAIL_PASSWORD=YOUR_GOOGLE_APP_PASSWORD

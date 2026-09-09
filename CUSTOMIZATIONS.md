@@ -21,10 +21,8 @@ If `upstream` already exists, verify its URL with `git remote -v` instead of add
 ## Current differences
 
 - `CUSTOMIZATIONS.md`: fork ownership, customization register, and update procedure.
-- `DEPLOYMENT.md`: target environments, data storage, deployment, backups, and rollback requirements.
-- `README.md`: links to fork maintenance and deployment documentation.
-- `.github/workflows/`: upstream checks gate the fork's GHCR image build and staging delivery. Upstream deployment jobs run only in the official repository. Deployment secrets come from the GitHub `staging` Environment.
-- `deploy/stg/`: dedicated Compose project, loopback ingress for the shared Caddy, resource limits, external runtime configuration schema, and a systemd Volume guard. Staging uses private local file storage on the Hetzner Volume, without R2 or backups. Recheck image entrypoints, service health checks, API routing, local signed downloads, and the Volume guard after upstream updates.
+- `README.md`: links to fork maintenance and identifies the separate private deployment repository.
+- `.github/workflows/`: upstream checks gate the fork's GHCR image build. Successful `main` pushes publish immutable image digests and dispatch the private staging workflow with only the source run ID. The fork retains only the limited dispatch token.
 - No Venova branding or application behavior changes have been implemented.
 
 For each future customization, record the affected paths, purpose, and checks needed after an upstream update. Remove entries when the customization is removed or replaced by upstream functionality.
@@ -60,10 +58,8 @@ Keep changes small and focused. Merge completed work into the fork's `main` thro
 
 6. Include the upstream release link, resolved conflicts, customization impact, validation results, and migration requirements in the PR. Merge only after review and successful checks. Use a merge commit to preserve upstream ancestry, rather than squash or rebase merging the update PR.
 
-Deployment is a separate step, defined in [DEPLOYMENT.md](DEPLOYMENT.md). Record the previous application version and prepare a database backup and recovery plan before deploying an update with migrations.
+Deployment is a separate private control-plane step. Record the previous application version and prepare a database backup and recovery plan before any production deployment with migrations.
 
 ## Workflow status
 
-This document defines the process; it does not configure GitHub branch protection or required checks. No upstream release update has been validated through this process yet.
-
-The local workflow draft gates Venova delivery on upstream checks and restricts inherited deployment jobs to the official repository. It has not yet run in GitHub. Verify that validation jobs actually run in the fork; documentation-only changes outside the deployment directory do not trigger the path-filtered CI workflow.
+This document defines the upstream update process. The fork `main` branch is protected with mandatory PR review and CI checks. The private repository owns deployment workflow, runtime secrets, the self-hosted runner, root-owned deployment code, and staging operations.

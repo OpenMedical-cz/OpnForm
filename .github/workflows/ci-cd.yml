@@ -33,6 +33,15 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  workflow_lint:
+    runs-on: ubuntu-latest
+    name: Validate GitHub Actions workflows
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker://rhysd/actionlint:1.7.7
+
   code_lint:
     runs-on: ubuntu-latest
     name: Run code linters
@@ -47,7 +56,7 @@ jobs:
       - name: Get Composer cache directory
         id: composer-cache
         run: |
-          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+          echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/cache@v4
         with:
@@ -242,7 +251,7 @@ jobs:
       - name: Get Composer cache directory
         id: composer-cache
         run: |
-          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+          echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/cache@v4
         with:
@@ -399,7 +408,7 @@ jobs:
             node --require ./scripts/e2e-runtime-guard.cjs .output/server/index.mjs > ../.e2e-ui.log 2>&1 &
           echo $! > ../.e2e-ui.pid
 
-          for attempt in $(seq 1 90); do
+          for _ in $(seq 1 90); do
             login_html="$(curl -fsS http://127.0.0.1:3100/login || true)"
             register_html="$(curl -fsS http://127.0.0.1:3100/register || true)"
 
@@ -464,7 +473,7 @@ jobs:
           retention-days: 14
 
   venova-staging:
-    needs: [code_lint, client_checks, sync_check, tests, e2e]
+    needs: [workflow_lint, code_lint, client_checks, sync_check, tests, e2e]
     if: github.repository == 'OpenMedical-cz/OpnForm' && github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: read
@@ -485,7 +494,7 @@ jobs:
       - name: Get Composer cache directory
         id: composer-cache
         run: |
-          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+          echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/cache@v4
         with:
@@ -541,10 +550,12 @@ jobs:
     steps:
       - name: Get version info
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo "VERSION=${GITHUB_REF#refs/*/v}" >> $GITHUB_ENV
-            echo "API_TAGS=${{secrets.DOCKER_API_REPO}}:latest,${{secrets.DOCKER_API_REPO}}:${GITHUB_REF#refs/*/v}" >> $GITHUB_ENV
-            echo "UI_TAGS=${{secrets.DOCKER_UI_REPO}}:latest,${{secrets.DOCKER_UI_REPO}}:${GITHUB_REF#refs/*/v}" >> $GITHUB_ENV
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            {
+              echo "VERSION=${GITHUB_REF#refs/*/v}"
+              echo "API_TAGS=${{secrets.DOCKER_API_REPO}}:latest,${{secrets.DOCKER_API_REPO}}:${GITHUB_REF#refs/*/v}"
+              echo "UI_TAGS=${{secrets.DOCKER_UI_REPO}}:latest,${{secrets.DOCKER_UI_REPO}}:${GITHUB_REF#refs/*/v}"
+            } >> "$GITHUB_ENV"
           fi
 
       - name: Check out the repo
