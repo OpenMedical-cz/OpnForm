@@ -1,0 +1,25 @@
+[Unit]
+Description=Venova OpnForm staging
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+RequiresMountsFor=/mnt/HC_Volume_106834335
+BindsTo=mnt-HC_Volume_106834335.mount
+After=mnt-HC_Volume_106834335.mount
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/opnform/deploy/stg
+ExecStartPre=/bin/bash /opt/opnform/deploy/stg/check-volume.sh
+ExecStartPre=/usr/bin/docker compose --env-file /etc/opnform/stg/runtime.env --env-file ./release.env config --quiet
+ExecStart=/usr/bin/docker compose --env-file /etc/opnform/stg/runtime.env --env-file ./release.env up -d --wait --wait-timeout 240 --pull never
+ExecStop=/usr/bin/docker compose --env-file /etc/opnform/stg/runtime.env --env-file ./release.env down --timeout 60
+ExecStopPost=/usr/bin/docker compose --env-file /etc/opnform/stg/runtime.env --env-file ./release.env down --timeout 60
+TimeoutStartSec=360
+TimeoutStopSec=180
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

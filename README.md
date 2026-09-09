@@ -20,6 +20,9 @@
 
 OpnForm is an open-source form builder.
 
+For this fork's Venova customizations and upstream update process, see [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md).
+For target environments, deployment, backups, and rollback, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Get Started
 
 The easiest way to get started with OpnForm is to sign up for our [managed service in the Cloud](https://opnform.com/). You get support, backups, upgrades, and more. Your data is safe and secure, and you don't need to worry about maintenance or infrastructure. Check out our quick overview of [cloud vs self-hosting](https://docs.opnform.com/deployment/cloud-vs-self-hosting).

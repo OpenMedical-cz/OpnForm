@@ -22,3 +22,7 @@ client/.env.*
 !api/.env.example
 !client/.env.example
 .help-center-docs/
+/deploy/stg/runtime.env
+/deploy/stg/smtp.env
+/deploy/stg/release.env
+/deploy/stg/previous-release.env
