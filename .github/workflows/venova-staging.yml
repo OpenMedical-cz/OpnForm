@@ -2,6 +2,12 @@ name: Venova staging release
 
 on:
   workflow_call:
+    inputs:
+      publish_on_internal_pull_request:
+        description: Publish bootstrap GHCR packages from an internal pull request without creating a deployable release.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -13,7 +19,16 @@ concurrency:
 
 jobs:
   images:
-    if: github.repository == 'OpenMedical-cz/OpnForm' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: >
+      github.repository == 'OpenMedical-cz/OpnForm' &&
+      (
+        (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+        (
+          inputs.publish_on_internal_pull_request &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
@@ -53,6 +68,7 @@ jobs:
           cache-from: type=gha,scope=venova-client
           cache-to: type=gha,scope=venova-client,mode=max
       - name: Write immutable staging release manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           SOURCE_RUN_ID: ${{ github.run_id }}
           SOURCE_SHA: ${{ github.sha }}
@@ -73,6 +89,7 @@ jobs:
           Path('release.json').write_text(json.dumps(manifest, separators=(',', ':'), sort_keys=True) + '\n')
           PY
       - name: Upload immutable staging release manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: venova-staging-release
@@ -82,6 +99,7 @@ jobs:
 
   dispatch-private-staging:
     needs: images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
