@@ -1,0 +1,3 @@
+# Non-secret release manifest. Both digests must come from the same CI run.
+API_IMAGE=ghcr.io/openmedical-cz/opnform-api@sha256:REPLACE_WITH_DIGEST
+CLIENT_IMAGE=ghcr.io/openmedical-cz/opnform-client@sha256:REPLACE_WITH_DIGEST

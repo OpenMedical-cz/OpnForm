@@ -1,0 +1,132 @@
+name: Venova staging delivery
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: venova-staging-delivery
+  cancel-in-progress: false
+
+jobs:
+  images:
+    if: github.repository == 'OpenMedical-cz/OpnForm' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      api: ${{ steps.api.outputs.digest }}
+      client: ${{ steps.client.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build API image
+        id: api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/openmedical-cz/opnform-api:${{ github.sha }}
+          build-args: APP_VERSION=${{ github.sha }}
+          cache-from: type=gha,scope=venova-api
+          cache-to: type=gha,scope=venova-api,mode=max
+      - name: Build client image
+        id: client
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.client
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/openmedical-cz/opnform-client:${{ github.sha }}
+          cache-from: type=gha,scope=venova-client
+          cache-to: type=gha,scope=venova-client,mode=max
+
+  deploy:
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Configure SSH without exposing credentials
+        env:
+          STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          STAGING_KNOWN_HOSTS: ${{ vars.STAGING_KNOWN_HOSTS }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          STAGING_HTTP_PASSWORD: ${{ secrets.STAGING_HTTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          for name in ('STAGING_SSH_KEY', 'STAGING_KNOWN_HOSTS', 'SMTP_PASSWORD', 'STAGING_HTTP_PASSWORD'):
+              if not os.environ.get(name, '').strip():
+                  raise SystemExit('Missing staging configuration: ' + name)
+          directory = Path(os.environ['RUNNER_TEMP']) / 'opnform-ssh'
+          directory.mkdir(mode=0o700)
+          for name, key in [('key', 'STAGING_SSH_KEY'), ('known_hosts', 'STAGING_KNOWN_HOSTS')]:
+              fd = os.open(directory / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+              with os.fdopen(fd, 'w') as handle:
+                  handle.write(os.environ[key].strip() + '\n')
+          PY
+      - name: Deploy exact image digests with staging secrets
+        env:
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          STAGING_HTTP_PASSWORD: ${{ secrets.STAGING_HTTP_PASSWORD }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+          API_IMAGE: ghcr.io/openmedical-cz/opnform-api@${{ needs.images.outputs.api }}
+          CLIENT_IMAGE: ghcr.io/openmedical-cz/opnform-client@${{ needs.images.outputs.client }}
+        run: |
+          python3 - <<'PY' | ssh -i "$RUNNER_TEMP/opnform-ssh/key" -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$RUNNER_TEMP/opnform-ssh/known_hosts" -o ConnectTimeout=15 opnform-deploy@142.132.167.249 deploy-opnform
+          import json, os, sys
+          json.dump({
+              'smtp_password': os.environ['SMTP_PASSWORD'],
+              'http_password': os.environ['STAGING_HTTP_PASSWORD'],
+              'registry_token': os.environ['REGISTRY_TOKEN'],
+              'registry_user': os.environ['REGISTRY_USER'],
+              'api': os.environ['API_IMAGE'],
+              'client': os.environ['CLIENT_IMAGE'],
+          }, sys.stdout)
+          PY
+      - name: Check public staging URL
+        env:
+          STAGING_HTTP_PASSWORD: ${{ secrets.STAGING_HTTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import base64, os, urllib.request
+          token = base64.b64encode(('venova:' + os.environ['STAGING_HTTP_PASSWORD']).encode()).decode()
+          request = urllib.request.Request(
+              'https://stg-forms.venova.cz/login',
+              headers={'Authorization': 'Basic ' + token},
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              if response.status != 200:
+                  raise SystemExit('Unexpected staging status')
+              if 'noindex' not in response.headers.get('X-Robots-Tag', ''):
+                  raise SystemExit('Staging indexing protection is missing')
+          PY
+      - name: Remove temporary SSH credentials
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os, shutil
+          from pathlib import Path
+          shutil.rmtree(Path(os.environ['RUNNER_TEMP']) / 'opnform-ssh', ignore_errors=True)
+          PY
