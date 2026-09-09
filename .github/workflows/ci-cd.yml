@@ -41,6 +41,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: docker://rhysd/actionlint:1.7.7
+      - name: Verify E2E dependency source isolation
+        run: bash scripts/tests/e2e-playwright-deps-test.sh
 
   code_lint:
     runs-on: ubuntu-latest
@@ -354,6 +356,9 @@ jobs:
           if [ -f /etc/apt/apt-mirrors.txt ]; then
             sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
           fi
+
+      - name: Remove volatile Google Chrome APT source
+        run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list
 
       - name: Install Playwright system dependencies
         timeout-minutes: 5
