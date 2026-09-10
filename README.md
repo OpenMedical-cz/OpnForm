@@ -21,7 +21,7 @@
 OpnForm is an open-source form builder.
 
 For this fork's Venova customizations and upstream update process, see [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md).
-For target environments, deployment, backups, and rollback, see [DEPLOYMENT.md](DEPLOYMENT.md).
+Deployment controls and operational documentation are maintained in the private `OpenMedical-cz/venova-opnform-deploy` repository.
 
 ## Get Started
 

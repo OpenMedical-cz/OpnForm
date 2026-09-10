@@ -1,3 +1,0 @@
-Defaults:opnform-deploy env_reset
-Defaults:opnform-deploy secure_path=/usr/sbin:/usr/bin:/sbin:/bin
-opnform-deploy ALL=(root) NOPASSWD: /usr/bin/python3 -I /opt/opnform/deploy/stg/deploy.py
