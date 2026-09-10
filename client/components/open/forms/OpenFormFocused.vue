@@ -81,7 +81,7 @@
       </div>
     </div>
 
-    <!-- Bottom right controls: arrows and branding -->
+    <!-- Bottom right navigation controls -->
     <div class="flex gap-2 fixed bottom-8 right-8 z-10" aria-label="Form controls">
       <!-- Focused nav arrows with fade transition -->
       <Transition name="fade" mode="out-in">
@@ -90,8 +90,6 @@
           <UButton color="form" square variant="solid" icon="i-heroicons-chevron-down-20-solid" :disabled="isLast" @click="goNext" />
         </div>
       </Transition>
-      <!-- Branding button -->
-      <PoweredBy v-if="!form.no_branding && showBranding" :color="form.color" />
     </div>
   </form>
 </template>
@@ -108,7 +106,6 @@ import SlidingTransition from '../../global/transitions/SlidingTransition.vue'
 import CaptchaWrapper from '~/components/forms/heavy/components/CaptchaWrapper.vue'
 import { FormMode } from '~/lib/forms/FormModeStrategy.js'
 import { useFormImagePreloader } from '~/composables/forms/useFormImagePreloader.js'
-import PoweredBy from '~/components/pages/forms/show/PoweredBy.vue'
 
 const props = defineProps({
   formManager: { type: Object, required: true }
@@ -271,9 +268,6 @@ onMounted(() => {
 
 // Slots/utilities
 const slots = useSlots()
-
-// Branding gating from strategy; defaults to true when not present
-const showBranding = computed(() => props.formManager?.strategy?.value?.display?.showBranding ?? true)
 
 // Focused arrows logic and gating
 const showArrowsSetting = computed(() => (form.value?.settings?.navigation_arrows !== false))

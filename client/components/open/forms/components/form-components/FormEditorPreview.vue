@@ -388,11 +388,3 @@ function handleDeleteCurrent() {
   transition: all 0.3s ease-in-out;
 }
 </style>
-
-<style>
-@reference '~/css/app.css';
-
-.form-editor-preview .powered-by-button {
-  @apply bottom-10 right-10 z-50;
-}
-</style>

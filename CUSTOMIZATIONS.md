@@ -23,7 +23,9 @@ If `upstream` already exists, verify its URL with `git remote -v` instead of add
 - `CUSTOMIZATIONS.md`: fork ownership, customization register, and update procedure.
 - `README.md`: links to fork maintenance and identifies the separate private deployment repository.
 - `.github/workflows/`: upstream checks gate the fork's GHCR image build. Successful `main` pushes publish immutable image digests and dispatch the private staging workflow with only the source run ID. The fork retains only the limited dispatch token.
-- No Venova branding or application behavior changes have been implemented.
+- Form badge removal: `client/components/open/forms/OpenForm.vue` and `OpenFormFocused.vue` no longer render the "Made with OpnForm" badge. This applies to existing forms, embeds, editor previews, and submission completion, regardless of stored `no_branding` values. Focused navigation arrows remain available.
+- `client/components/pages/forms/show/PoweredBy.vue` and badge-specific styles in `FormEditorPreview.vue` were removed. `FormCustomization.vue` no longer offers the "Hide OpnForm Branding" toggle or its upgrade handler. Stored `no_branding` values, defaults, and API compatibility remain unchanged; no migration is required. Other branding, licensing, and enterprise code are unchanged.
+- After upstream updates, check both layouts in public forms, embeds, editor previews, and submission completion with `no_branding` enabled and disabled. Verify that the badge and editor toggle remain absent and navigation and submission still work. Search for reintroduced `PoweredBy` components, `powered-by-button` styles, and badge renderers; run frontend lint and relevant tests.
 
 For each future customization, record the affected paths, purpose, and checks needed after an upstream update. Remove entries when the customization is removed or replaced by upstream functionality.
 
