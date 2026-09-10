@@ -168,25 +168,6 @@
       <ImageWithSettings :form="form" name="cover_picture" :label="isFocused ? 'Background' : 'Cover (~1500px)'" kind="cover" />
     </div>
 
-    <toggle-switch-input
-      name="no_branding"
-      :form="form"
-      class="mt-4"
-      @update:model-value="onChangeNoBranding"
-    >
-      <template #label>
-        <InputLabel
-          :label="'Hide OpnForm Branding'"
-          :native-for="'no_branding'"
-          class="text-sm font-medium!"
-        />
-        <PlanTag
-          upgrade-modal-title="Upgrade today to remove OpnForm branding"
-          class="-mt-1 ml-2"
-        />
-      </template>
-    </toggle-switch-input>
-
     <EditorSectionHeader
       icon="heroicons:cog-6-tooth-16-solid"
       title="Advanced Options"
@@ -240,24 +221,17 @@
 import EditorSectionHeader from "./EditorSectionHeader.vue"
 import { useWorkingFormStore } from "../../../../../stores/working_form"
 import GoogleFontPicker from "../../../editors/GoogleFontPicker.vue"
-import PlanTag from "~/components/app/PlanTag.vue"
 import { DEFAULT_COLOR, ensureSettingsObject } from "@/composables/forms/initForm"
 import PresentationStyleSwitch from "./PresentationStyleSwitch.vue"
 import ImageWithSettings from "../media/ImageWithSettings.vue"
 
 
 const workingFormStore = useWorkingFormStore()
-const { openSubscriptionModal } = useAppModals()
-const { hasFeature } = usePlanFeatures()
 const form = storeToRefs(workingFormStore).content
 const isMounted = ref(false)
 const confetti = useConfetti()
 const showGoogleFontPicker = ref(false)
 const { $i18n } = useNuxtApp()
-
-const isPro = computed(() => {
-  return hasFeature('branding.removal')
-})
 
 const isFocused = computed(() => form.value?.presentation_style === 'focused')
 
@@ -286,15 +260,6 @@ const onChangeConfettiOnSubmission = (val) => {
   if (isMounted.value && val) {
     confetti.play()
   }
-}
-
-const onChangeNoBranding = (val) => {
-  if (!isPro.value && val) {
-    openSubscriptionModal({ modal_title: "Upgrade today to remove OpnForm branding" })
-    setTimeout(() => {
-      form.value.no_branding = false
-    }, 300)
-  } 
 }
 
 const onApplyFont = (val) => {

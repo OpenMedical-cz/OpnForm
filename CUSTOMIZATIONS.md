@@ -25,7 +25,9 @@ If `upstream` already exists, verify its URL with `git remote -v` instead of add
 - `README.md`: links to fork maintenance and deployment documentation.
 - `.github/workflows/`: upstream checks gate the fork's GHCR image build and staging delivery. Upstream deployment jobs run only in the official repository. Deployment secrets come from the GitHub `staging` Environment.
 - `deploy/stg/`: dedicated Compose project, loopback ingress for the shared Caddy, resource limits, external runtime configuration schema, and a systemd Volume guard. Staging uses private local file storage on the Hetzner Volume, without R2 or backups. Recheck image entrypoints, service health checks, API routing, local signed downloads, and the Volume guard after upstream updates.
-- No Venova branding or application behavior changes have been implemented.
+- Form badge removal: `client/components/open/forms/OpenForm.vue` and `OpenFormFocused.vue` no longer render the "Made with OpnForm" badge. This applies to existing forms, embeds, editor previews, and submission completion, regardless of stored `no_branding` values. Focused navigation arrows remain available.
+- `client/components/pages/forms/show/PoweredBy.vue` and badge-specific styles in `FormEditorPreview.vue` were removed. `FormCustomization.vue` no longer offers the "Hide OpnForm Branding" toggle or its upgrade handler. Stored `no_branding` values, defaults, and API compatibility remain unchanged; no migration is required. Other branding, licensing, and enterprise code are unchanged.
+- After upstream updates, check both layouts in public forms, embeds, editor previews, and submission completion with `no_branding` enabled and disabled. Verify that the badge and editor toggle remain absent and navigation and submission still work. Search for reintroduced `PoweredBy` components, `powered-by-button` styles, and badge renderers; run frontend lint and relevant tests.
 
 For each future customization, record the affected paths, purpose, and checks needed after an upstream update. Remove entries when the customization is removed or replaced by upstream functionality.
 
