@@ -170,6 +170,11 @@ export default defineNuxtConfig({
     port: Number(process.env.NUXT_PORT) || 3000,
   },
 
+  // Venova fork: send the home page straight to login instead of the OpnForm marketing landing page.
+  routeRules: {
+    '/': { redirect: '/login' },
+  },
+
   sitemap,
   runtimeConfig,
   compatibilityDate: '2024-10-30'
