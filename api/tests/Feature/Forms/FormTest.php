@@ -127,7 +127,7 @@ it('can fetch a form', function () {
         ]);
 });
 
-it('returns effective no_branding for form owners on self-hosted', function () {
+it('honors a requested no_branding for form owners on self-hosted without a license', function () {
     config()->set('app.self_hosted', true);
     Cache::flush();
 
@@ -135,6 +135,21 @@ it('returns effective no_branding for form owners on self-hosted', function () {
     $workspace = $this->createUserWorkspace($user);
     $form = $this->createForm($user, $workspace, [
         'no_branding' => true,
+    ]);
+
+    $formData = (new \App\Http\Resources\FormResource($form))->toArray(request());
+
+    expect($formData['no_branding'])->toBeTrue();
+});
+
+it('does not force no_branding on for form owners on self-hosted who did not request it', function () {
+    config()->set('app.self_hosted', true);
+    Cache::flush();
+
+    $user = $this->actingAsUser();
+    $workspace = $this->createUserWorkspace($user);
+    $form = $this->createForm($user, $workspace, [
+        'no_branding' => false,
     ]);
 
     $formData = (new \App\Http\Resources\FormResource($form))->toArray(request());
