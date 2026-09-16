@@ -11,6 +11,9 @@ main() {
         *"artisan schedule:work"*)
             ROLE="scheduler"
             ;;
+        *"artisan migrate"*)
+            ROLE="migrate"
+            ;;
         *)
             # Defaults to "api" for any other command (e.g., php-fpm)
             ROLE="api"
@@ -20,17 +23,27 @@ main() {
     echo "Determined role: $ROLE for command: $COMMAND_AS_STRING"
 
     apply_php_configuration
-    prep_file_permissions 
-    prep_storage          
-    wait_for_db           
+    if [ "$ROLE" != "migrate" ]; then
+        prep_file_permissions
+        prep_storage
+    fi
+    wait_for_db
 
     if [ "$ROLE" = "api" ]; then
         echo "Running setup for API role..."
-        apply_db_migrations
+        if [ "${OPNFORM_RUN_MIGRATIONS:-true}" = "true" ]; then
+            apply_db_migrations
+        else
+            echo "Skipping DB Migrations, OPNFORM_RUN_MIGRATIONS is ${OPNFORM_RUN_MIGRATIONS}"
+        fi
         initialize_instance
         initialize_mcp_oauth_keys
         optimize_application
         echo "Starting server for API role with command: $@"
+        exec "$@"
+    elif [ "$ROLE" = "migrate" ]; then
+        echo "Running setup for Migrate role..."
+        echo "Starting migration with command: $@"
         exec "$@"
     elif [ "$ROLE" = "scheduler" ]; then
         echo "Running setup for Scheduler role..."
