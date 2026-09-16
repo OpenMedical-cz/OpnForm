@@ -32,6 +32,14 @@ Stopping services to protect data is distinct from stopping them to deliver a re
 
 This permission is scoped to the snapshot. It SHALL NOT be used to justify a full stop and start as the delivery mechanism.
 
+This requirement governs stopping services to *protect data*, and tearing the
+environment down to *deliver*. It does not govern how many containers a release
+replaces. Replacing a service whose image or definition changed is delivery, and
+so is an orchestrator replacing a container that depends on one it just replaced.
+Those replacements have a cost, and it is a real one, but bounding it is a
+separate concern from this requirement and is not what an unnecessary snapshot
+would have protected against.
+
 #### Scenario: Snapshot requires quiescing writes
 
 - **WHEN** an environment captures a snapshot before applying a schema change
@@ -42,7 +50,9 @@ This permission is scoped to the snapshot. It SHALL NOT be used to justify a ful
 #### Scenario: Delivery does not justify stopping services
 
 - **WHEN** a release carries no schema change
-- **THEN** no service is stopped at any point in the deploy
+- **THEN** no service is stopped in order to take a snapshot
+- **AND** the environment is not stopped and started as the way the release is delivered
+- **AND** the database keeps running throughout
 
 ### Requirement: An environment that cannot determine whether a release changes the schema SHALL assume it does
 
