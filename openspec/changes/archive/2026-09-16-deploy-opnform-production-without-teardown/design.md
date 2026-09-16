@@ -24,7 +24,12 @@ See `proposal.md` for motivation. The constraints that shape the approach:
   quoted in `proposal.md` cannot have been measured the way they are described.
   The proxies surviving needs `depends_on` removed, which the nginx change makes
   possible (variable upstreams no longer have to resolve at configuration load) but
-  which is not in this change. Tracked separately.
+  which is not in this change, and is not planned. Removing it would also require
+  a healthcheck `start_period` on `ingress`, since without the ordering it can
+  start before `ui` is healthy and exhaust its six retries in sixty seconds
+  against a `ui` allowed longer than that, failing the deploy on a cold start
+  instead. That was judged not worth changing startup ordering on a host shared
+  with clinic production, for a deploy that runs a few times a month.
 - The failure posture does not weaken anywhere: every failing step aborts before the next mutation.
 
 **Non-Goals:**
