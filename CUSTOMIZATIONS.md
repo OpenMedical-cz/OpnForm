@@ -23,6 +23,7 @@ If `upstream` already exists, verify its URL with `git remote -v` instead of add
 - `CUSTOMIZATIONS.md`: fork ownership, customization register, and update procedure.
 - `README.md`: links to fork maintenance and identifies the separate private deployment repository.
 - `.github/workflows/`: upstream checks gate the fork's GHCR image build. Successful `main` pushes publish immutable image digests and dispatch the private staging workflow with only the source run ID. The fork retains only the limited dispatch token.
+  `ci-cd.yml` also runs on `docs/**`, `openspec/**`, and any `.md` file. Upstream's filter covers only code paths, and every job in this workflow is a required status check on the fork's protected `main` with `enforce_admins` on, so a documentation-only pull request would otherwise never run them and could never merge, with no admin override. After upstream updates, re-check that these four entries survive in both the `push` and `pull_request` filters.
 - Form badge removal: `client/components/open/forms/OpenForm.vue` and `OpenFormFocused.vue` no longer render the "Made with OpnForm" badge. This applies to existing forms, embeds, editor previews, and submission completion, regardless of stored `no_branding` values. Focused navigation arrows remain available.
 - `client/components/pages/forms/show/PoweredBy.vue` and badge-specific styles in `FormEditorPreview.vue` were removed. `FormCustomization.vue` no longer offers the "Hide OpnForm Branding" toggle or its upgrade handler. Stored `no_branding` values, defaults, and API compatibility remain unchanged; no migration is required. Other branding, licensing, and enterprise code are unchanged.
 - `api/app/Service/Branding/BrandingPolicy.php`: `canRemoveBranding()` skips the paid `Feature::BRANDING_REMOVAL`/whitelabel-license check when `config('app.self_hosted')`, but still requires `$requested` (the per-template `remove_branding` toggle, or the form's `no_branding` flag) to be true first — it does not force branding off unconditionally. Turning on a PDF template's "Remove Branding" toggle now removes the "PDF generated with OpnForm" footer on self-hosted without a license; leaving it off still shows the footer. `PdfTemplate.remove_branding` never passes through `FormCleaner`, so this is the reliable, fully-working case.
@@ -73,3 +74,9 @@ Deployment is a separate private control-plane step. Record the previous applica
 ## Workflow status
 
 This document defines the upstream update process. The fork `main` branch is protected with mandatory PR review and CI checks. The private repository owns deployment workflow, runtime secrets, the self-hosted runner, root-owned deployment code, and staging operations.
+
+## Deployment and host operations
+
+This repository is public. Host addresses, access paths, runner configuration, and anything else naming infrastructure belong in the private deployment repository, `OpenMedical-cz/venova-opnform-deploy`, not here. Its `deploy/stg/README.md` and `deploy/prod/README.md` cover how each environment is reached and installed, including the paths that are not obvious from the bootstrap commands.
+
+What belongs here is only what the image itself does. The entrypoint reads `OPNFORM_RUN_MIGRATIONS`, and dispatches a `migrate` role, because the deployment repository applies schema changes as an explicit step. Both are recorded under "Current differences" above.

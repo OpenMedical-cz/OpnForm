@@ -64,6 +64,14 @@ nginx re-resolves per request, with `valid=10s` overriding the long TTL the
 embedded resolver returns. The same forced move against this configuration
 routed correctly on both the proxied and the FastCGI path.
 
+Delivering it needs one more thing. `install-runner-host.sh` installs a fixed
+list of files, and `nginx-internal.conf` was not on it, in either environment.
+The file reached the staging host by hand, which is why staging runs. So a
+reinstall would deliver the updated `nginx.conf` and leave the internal one
+stale, fixing the public route and not the one server-side rendering uses. The
+installer list is corrected alongside, and a test now asserts the installer
+ships every file the compose file bind-mounts.
+
 This was not in the original task list. It is load-bearing rather than
 incidental: without it the first converging deploy either fails at `up --wait`,
 because the ingress healthcheck proxies to a `ui` that has moved, or serves
@@ -129,9 +137,9 @@ Production's daily backup (`backup.py`, 03:47 UTC, `pg_dump --format custom` pip
 
 **A new container that never becomes healthy leaves the environment down** → Compose removes the old container before starting its replacement, so an unhealthy new `api` means an outage. This is not a regression, today's `down` then `up` has the same exposure, but it is no longer masked by the fact that everything was down anyway. Mitigation: `--wait` makes the deploy fail rather than report success, `release.env` is copied to `previous-release.env` before being overwritten, and recovery is to restore that file and converge again.
 
-**Re-running `install-runner-host.sh` re-registers the Actions runner** → It requires a fresh registration token on stdin and reconfigures the runner while installing the changed files. There is no lighter sanctioned path, since the runner's sudoers grant is pinned to that one script's output. Mitigation: treat it as one administrator step, and confirm the runner is online and the unit is loaded before the first deploy through it.
+**Re-running `install-runner-host.sh` could not install anything** → The opposite of what this note first assumed. The script refused to run on a host that already had a runner, and it refused *after* installing the deployment files and *before* `systemctl daemon-reload`, so a re-install wrote a unit that systemd never loaded and exited 1 indistinguishably from failing early. It also demanded a registration token it had no use for. The refusal was right in spirit, a re-install must never silently re-register the runner, so it now skips registration rather than failing and reads a token only when there is something to register. There is still no lighter sanctioned path, since the runner's sudoers grant is pinned to that one script's output. Mitigation: treat it as one administrator step, and confirm the runner is online and the unit is loaded before the first deploy through it.
 
-**`ExecReload` may not be accepted on a `Type=oneshot` unit** → Verified with `systemd-analyze verify` before install. Fallback is documentation, as above. Does not affect the deploy path.
+**`ExecReload` may not be accepted on a `Type=oneshot` unit** → It is. `systemd-analyze verify` flags unknown keys when given one, flagged nothing here, and registered a fourth exec command where the previous unit had three. The documentation fallback was not needed. Does not affect the deploy path.
 
 ## Migration Plan
 
