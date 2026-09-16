@@ -64,6 +64,14 @@ nginx re-resolves per request, with `valid=10s` overriding the long TTL the
 embedded resolver returns. The same forced move against this configuration
 routed correctly on both the proxied and the FastCGI path.
 
+Delivering it needs one more thing. `install-runner-host.sh` installs a fixed
+list of files, and `nginx-internal.conf` was not on it, in either environment.
+The file reached the staging host by hand, which is why staging runs. So a
+reinstall would deliver the updated `nginx.conf` and leave the internal one
+stale, fixing the public route and not the one server-side rendering uses. The
+installer list is corrected alongside, and a test now asserts the installer
+ships every file the compose file bind-mounts.
+
 This was not in the original task list. It is load-bearing rather than
 incidental: without it the first converging deploy either fails at `up --wait`,
 because the ingress healthcheck proxies to a `ui` that has moved, or serves

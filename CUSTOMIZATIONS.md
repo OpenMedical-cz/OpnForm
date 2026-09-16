@@ -73,3 +73,9 @@ Deployment is a separate private control-plane step. Record the previous applica
 ## Workflow status
 
 This document defines the upstream update process. The fork `main` branch is protected with mandatory PR review and CI checks. The private repository owns deployment workflow, runtime secrets, the self-hosted runner, root-owned deployment code, and staging operations.
+
+## Deployment and host operations
+
+This repository is public. Host addresses, access paths, runner configuration, and anything else naming infrastructure belong in the private deployment repository, `OpenMedical-cz/venova-opnform-deploy`, not here. Its `deploy/stg/README.md` and `deploy/prod/README.md` cover how each environment is reached and installed, including the paths that are not obvious from the bootstrap commands.
+
+What belongs here is only what the image itself does. The entrypoint reads `OPNFORM_RUN_MIGRATIONS`, and dispatches a `migrate` role, because the deployment repository applies schema changes as an explicit step. Both are recorded under "Current differences" above.
