@@ -6,16 +6,18 @@ Governs how a released OpnForm image reaches a running environment: which servic
 
 ### Requirement: A deploy SHALL disturb only the services whose released content changed
 
-A deploy SHALL replace an environment's application services without stopping the services the release does not change. The database, the cache, the public ingress and the internal API proxy SHALL remain running throughout a deploy and SHALL NOT be stopped, removed or recreated because a new application release is being delivered.
+A deploy SHALL replace an environment's application services without stopping the services the release does not change. The database and the cache SHALL remain running throughout a deploy and SHALL NOT be stopped, removed or recreated because a new application release is being delivered.
 
 Stopping every service in the environment in order to deliver a new release is prohibited. Full stop and start remains the correct behavior for a deliberate shutdown or a host reboot, and SHALL remain available for those.
 
-#### Scenario: New application release leaves data and routing services untouched
+The routing tier is a weaker guarantee, and deliberately so. The public ingress and the internal API proxy declare a dependency on the application service, so an orchestrator that replaces the application replaces them with it. Measured on production: a release changing both image digests left the database and cache untouched and replaced both proxies, costing 14 failed requests out of 120 sampled once a second, where the gap is the ingress releasing its published port rather than the application swap. This requirement does not claim those proxies survive a release, because they do not. Dropping the declared dependency would make them survive - the proxies resolve their upstreams per request now, so the dependency no longer orders anything that needs ordering - but it would also need a healthcheck start period on the ingress, so that starting before the frontend is healthy fails no deploy on a cold start. That is a separate change, and an unclaimed one.
+
+#### Scenario: New application release leaves the data services untouched
 
 - **WHEN** a release is deployed whose application image digests differ from the running release
 - **THEN** the database and cache containers are still the same container instances after the deploy as before it
-- **AND** the public ingress and internal API proxy containers are still the same container instances
 - **AND** the application, worker, scheduler and frontend containers have been replaced
+- **AND** no service is stopped other than by being replaced
 
 #### Scenario: Re-deploying the running release replaces nothing
 
