@@ -60,8 +60,15 @@ RUN apk add --no-cache --virtual .build-deps \
     pgsql \
     pdo_pgsql \
     bcmath \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
+    # phpredis from its GitHub tag rather than pecl.php.net, which went down under
+    # load on 2026-10-21 and broke the build; pinned and checksummed.
+    && mkdir -p /usr/src/php/ext/redis \
+    && curl -fsSL -o /tmp/phpredis.tar.gz https://github.com/phpredis/phpredis/archive/refs/tags/6.3.0.tar.gz \
+    && echo "cb8f81df1a275599e4f8ddcfec7e1f65ed1953e6f5673649149fd680ebff4cad  /tmp/phpredis.tar.gz" | sha256sum -c - \
+    && tar -xzf /tmp/phpredis.tar.gz -C /usr/src/php/ext/redis --strip-components=1 \
+    && rm /tmp/phpredis.tar.gz \
+    && docker-php-ext-install -j$(nproc) redis \
+    && docker-php-source delete \
     && apk del .build-deps
 
 WORKDIR /usr/share/nginx/html/
