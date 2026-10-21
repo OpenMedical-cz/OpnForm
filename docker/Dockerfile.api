@@ -1,5 +1,5 @@
 # Build stage - using PHP CLI image with extensions
-FROM php:8.3-cli AS builder
+FROM php:8.3.36-cli AS builder
 
 # Install composer and extensions needed for dependency installation
 RUN apt-get update && apt-get install -y \
@@ -24,8 +24,9 @@ RUN composer install --optimize-autoloader --no-interaction \
     --ignore-platform-req=ext-bcmath \
     --ignore-platform-req=ext-gd
 
-# Final stage - smaller runtime image
-FROM php:8.3-fpm-alpine
+# Final stage - smaller runtime image. Pinned to the patch release that fixes
+# CVE-2026-109618 and CVE-2026-109619; raise it with each PHP security release.
+FROM php:8.3.36-fpm-alpine
 
 # Accept version build argument
 ARG APP_VERSION=unknown
